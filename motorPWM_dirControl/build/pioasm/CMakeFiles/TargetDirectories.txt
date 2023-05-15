@@ -1,0 +1,3 @@
+/home/jd/projects/pico/motorPWM_dirControl/build/pioasm/CMakeFiles/pioasm.dir
+/home/jd/projects/pico/motorPWM_dirControl/build/pioasm/CMakeFiles/edit_cache.dir
+/home/jd/projects/pico/motorPWM_dirControl/build/pioasm/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "dc_motor",
+		"source" : "/home/jd/projects/pico/customLibraries/dc_motor"
+	}
+}
