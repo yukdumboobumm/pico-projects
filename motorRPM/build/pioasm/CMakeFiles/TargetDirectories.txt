@@ -1,3 +1,0 @@
-/home/jd/projects/pico/pico-projects/motorRPM/build/pioasm/CMakeFiles/pioasm.dir
-/home/jd/projects/pico/pico-projects/motorRPM/build/pioasm/CMakeFiles/edit_cache.dir
-/home/jd/projects/pico/pico-projects/motorRPM/build/pioasm/CMakeFiles/rebuild_cache.dir
