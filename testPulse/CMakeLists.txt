@@ -17,7 +17,7 @@ add_executable(${PROJECT_NAME}  testPulse.c testPulse.pio)
 pico_generate_pio_header(${PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/testPulse.pio)
 
 # Link against the Raspberry Pi Pico SDK and the dc_motor library
-target_link_libraries(${PROJECT_NAME}  pico_stdlib hardware_pio)
+target_link_libraries(${PROJECT_NAME}  pico_stdlib hardware_pio pico_rand)
 
 # Specify where the dc_motor library is located
 #add_subdirectory(${PICO_SDK_PATH}/../customLibraries/dc_motor ${CMAKE_CURRENT_BINARY_DIR}/dc_motor)

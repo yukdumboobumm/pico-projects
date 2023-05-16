@@ -1,24 +1,22 @@
 ;;;;
 .program pulse_count
 
-init:
+ init:
     mov y !null         ; start with 0xffffffff and count down for each pulse
     pull block
     out null 32
-    set x 0
-loop:
+    set x  0            ; make sure x is zero so OSR doesn't pull a random value
+count:
     wait 0 pin 0
     wait 1 pin 0
     pull noblock         ; pull a value from TX FIFO -> OSR, if it exists,
     out x 32
-    ;jmp x-- handler         ; count a pulse if osr was empty
-    jmp !x count
+    jmp x-- handler   ; send count to main if OSR has an instruction (is not empty)
+    set x 0
+    jmp y-- count
 handler:
     mov isr !y          ; send count to the ISR
     push noblock        ; push count to main
-count:
-    set x 0
-    jmp y-- loop
 
 % c-sdk {
 static inline void pulse_count_program_init(PIO pio, uint sm, uint offset, uint pulsePin) {
