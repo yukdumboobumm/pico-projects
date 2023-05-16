@@ -1,21 +1,17 @@
+;;;;
 .program pulse_count
 .wrap_target
     pull block
-    out null 32
-    set x 0
-    mov y !null
+    out x 32
 poll:
     jmp pin pinhigh
-    pull noblock
-    out x 32
-    jmp !x poll
-handler:
-    mov isr !y
-    push noblock
-    .wrap
+    jmp poll
 pinhigh:
     wait 0 pin 0
-    jmp y-- poll
+    jmp x-- poll
+    ;irq wait 0
+    wait 0 irq
+    .wrap
 
 % c-sdk {
 static inline void pulse_count_program_init(PIO pio, uint sm, uint offset, uint pulsePin) {
