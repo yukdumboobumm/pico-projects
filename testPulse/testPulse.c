@@ -50,10 +50,13 @@ void initPulsePIO(PULSE_COUNTER *pc) {
     pulse_count_program_init(pc->PIO_NUM, pc->SM_NUM, pc->OFFSET, pc->sensorPin);//initialize the SM
     pio_sm_set_enabled(pc->PIO_NUM, pc->SM_NUM, true);//start the SM
     printf("Loaded PIO program at %d and started SM: %d\n", pc->OFFSET, pc->SM_NUM);
+    // pio_set_irq0_source_enabled(pio0, pis_interrupt0, true);
+	// irq_set_exclusive_handler(PIO0_IRQ_0, isr0);
+	// irq_set_enabled(PIO0_IRQ_0, true);
 }
 
 void startCount(PULSE_COUNTER *pc) {
-    printf("sending start instruction\n");
+    //printf("sending start instruction\n");
     pio_sm_put_blocking(pc->PIO_NUM, pc->SM_NUM, true);//send a word to the TX FIFO, blocking if full
     pc->startTimeArray = get_absolute_time();
     pio_interrupt_clear(PIONUM, 0);
@@ -61,17 +64,19 @@ void startCount(PULSE_COUNTER *pc) {
 }
 
 void stopCount(PULSE_COUNTER *pc) {
+    uint32_t randNum = get_rand_32();
+    randNum = (randNum % 10) + 1;
     if (pc->countStarted) {
         printf("sending stop instruction\n");
-        pio_sm_put_blocking(pc->PIO_NUM, pc->SM_NUM, (uint32_t)1);//send a word to the TX FIFO, blocking if full
+        pio_sm_put(pc->PIO_NUM, pc->SM_NUM, randNum);//send a word to the TX FIFO, blocking if full
         pc->endTimeArray= get_absolute_time();
         //get the count from RX FIFO, blocking if empty
-        printf("waiting for count\n");  
-        // pc->countsArray = pio_sm_get_blocking(pc->PIO_NUM, pc->SM_NUM)+1;
-        pc->countsArray = pio_sm_get(pc->PIO_NUM, pc->SM_NUM)+1;
+        //printf("waiting for count\n");  
+        pc->countsArray = pio_sm_get_blocking(pc->PIO_NUM, pc->SM_NUM);
+        //pc->countsArray = pio_sm_get(pc->PIO_NUM, pc->SM_NUM)+1;
         sleep_ms(100);
 
-        printf("received: %d\n", pc->countsArray);
+        printf("**received: %u\n", pc->countsArray);
         pc->countStarted = false;
     }
     else printf("stopCount w/o a startCount. Skipping...\n");
@@ -82,7 +87,7 @@ void calcSpeed(PULSE_COUNTER *pc) {
     if (timeDiff_ms) {
         pc->currentHertz = ((float)pc->countsArray) / (timeDiff_ms);
         pc->currentRPM = pc->currentHertz * 60;
-        printf("time diff ms: %lld, counts: %d\n", timeDiff_ms, pc->countsArray);
+        //printf("time diff ms: %lld, counts: %d\n", timeDiff_ms, pc->countsArray);
     }
     else printf("no time difference. Skipping...\n");
 }
@@ -105,20 +110,20 @@ void loop() {
     uint speed = 10;
     while(true) {
         uint32_t randPulseNum = get_rand_32();
-        randPulseNum = (randPulseNum % 10) + 1;
-        printf("using %d for number of pulses\n",randPulseNum);
-        printf("starting counts\n");
+        randPulseNum = (randPulseNum % 100) + 1;
+        printf("**using %d for number of pulses\n",randPulseNum);
+        // printf("starting counts\n");
         startCount(&pulse_1);
         for (int i =0; i<randPulseNum; i++) {
             gpio_put(OUT_PIN, true);
-            sleep_ms(100);
+            sleep_us(2);
             gpio_put(OUT_PIN, false);
-            sleep_ms(100);
+            sleep_us(2);
         }
-        sleep_ms(5000);
+        sleep_ms(2000);
         stopCount(&pulse_1);
-        calcSpeed(&pulse_1);
-        printf("Speed: %d, HZ: %f, RPM: %f\n", speed, pulse_1.currentHertz, pulse_1.currentRPM);
+        // calcSpeed(&pulse_1);
+        //printf("Speed: %d, HZ: %f, RPM: %f\n", speed, pulse_1.currentHertz, pulse_1.currentRPM);
         sleep_ms(2000);
     }
 }
