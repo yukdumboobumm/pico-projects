@@ -11,7 +11,10 @@ const uint OUT_PIN = 19;
 const PIO PIONUM = pio0;
 
 //interrupt flag
-volatile bool globalIntFlag = false;
+volatile bool int0Flag = false;
+volatile bool int1Flag = false;
+volatile bool int2Flag = false;
+volatile bool int3Flag = false;
 
 typedef struct {
     uint sensorPin;
@@ -26,28 +29,76 @@ typedef struct {
     float currentHertz;
     float currentRPM;
 
+    uint interruptNum;
     PIO PIO_NUM;
     uint SM_NUM;
     uint OFFSET;
 } PULSE_COUNTER;
 
-PULSE_COUNTER pulse_1;
+enum INT_NUM{
+    INT0,
+    INT1,
+    INT2,
+    INT3,
+    INT_NUM_SIZE
+};
+
+PULSE_COUNTER pulse_0;
+bool intnum_used[INT_NUM_SIZE] = {false};
 
 
-void initPulseCounter(PULSE_COUNTER *pc, uint pin) {
+void initPulseCounter(PULSE_COUNTER *pc, uint pin,  enum INT_NUM intNum) {
     pc->sensorPin = pin;
     pc->count = 0;
     pc->countStartTime = nil_time;
     pc->countEndTime = nil_time;
     pc->countStarted = false;
     pc->countReady = false;
+    if (intnum_used[intNum]==false) {
+        pc->interruptNum = intNum;
+        switch(intNum) {
+            case INT0:
+                pc->PIO_NUM = pio0;
+                pc->SM_NUM = 0;
+                break;
+            case INT1:
+                pc->PIO_NUM = pio0;
+                pc->SM_NUM = 1;
+                break;
+            case INT2:
+                pc->PIO_NUM = pio1;
+                pc->SM_NUM = 0;
+                break;
+            case INT3:
+                pc->PIO_NUM = pio1;
+                pc->SM_NUM = 1;
+                break;
+            default:
+                printf("bad interrupt value. program terminated\n");
+                while(1){};
+        }
+        pc->interruptNum = intNum; //how can write this so i know if a value has been used already?
+    }
+    else { 
+        printf("interrupt alread used. program terminated\n");
+        while(1){};
+    }
     gpio_init(pin);
     gpio_set_dir(pin, GPIO_IN);  // set the pin to be an input pullup
     gpio_pull_down(pin);
 }
 
 void isr0() {
-    globalIntFlag = true;
+    int0Flag = true;
+}
+void isr1() {
+    int1Flag = true;
+}
+void isr2() {
+    int2Flag = true;
+}
+void isr3() {
+    int3Flag = true;
 }
 
 //grab a state machine, load, and initialize it
@@ -55,7 +106,7 @@ void initPulsePIO(PULSE_COUNTER *pc) {
     // enum pio_interrupt_source intSource;
     // uint intNum;
     pc->PIO_NUM = PIONUM;
-    pc->SM_NUM = pio_claim_unused_sm(pc->PIO_NUM, true);// Get first free state machine in selected PIO
+    //pc->SM_NUM = pio_claim_unused_sm(pc->PIO_NUM, true);// Get first free state machine in selected PIO
     pc->OFFSET = pio_add_program(pc->PIO_NUM, &pulse_count_program);// Add PIO program to PIO instruction memory, return memory offset
     pulse_count_program_init(pc->PIO_NUM, pc->SM_NUM, pc->OFFSET, pc->sensorPin);//initialize the SM
     pio_sm_set_enabled(pc->PIO_NUM, pc->SM_NUM, true);//start the SM
@@ -119,27 +170,27 @@ void init() {
     gpio_set_dir(OUT_PIN, GPIO_OUT);
     gpio_put(OUT_PIN, false);
     sleep_ms(2000);//give us some time to breathe
-    initPulseCounter(&pulse_1, PULSE_PIN);
-    initPulsePIO(&pulse_1);
+    initPulseCounter(&pulse_0, PULSE_PIN, INT0);
+    initPulsePIO(&pulse_0);
 }
 
 //loop forever
 void loop() {
     uint speed = 10;
     while(true) {
-        globalIntFlag = false;
+        int0Flag = false;
         uint32_t randPulseNum = get_rand_32();
         randPulseNum = (randPulseNum % 1000) + 100;
         printf("**using %d for number of pulses\n",randPulseNum);
-        startCount(&pulse_1, randPulseNum);
-        while(globalIntFlag == false) {
+        startCount(&pulse_0, randPulseNum);
+        while(int0Flag == false) {
             gpio_put(OUT_PIN, true);
             sleep_us(25);
             gpio_put(OUT_PIN, false);
             sleep_us(25);
         }
-        getCount(&pulse_1);
-        calcSpeed(&pulse_1);
+        getCount(&pulse_0);
+        calcSpeed(&pulse_0);
         sleep_ms(2000);
     }
 }

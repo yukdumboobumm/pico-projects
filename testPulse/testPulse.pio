@@ -10,7 +10,7 @@ pinhigh:
     wait 0 pin 0
     jmp x-- poll
     ;irq wait 0
-    wait 0 irq
+    ;wait 0 irq
     .wrap
 
 % c-sdk {
