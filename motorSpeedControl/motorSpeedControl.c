@@ -36,18 +36,18 @@ void init() {
     initMotor(&motor_0, R_ENABLE_PIN, L_ENABLE_PIN, R_PWM_PIN, L_PWM_PIN);//DCMOTOR, R-Enable, L-Enable, R-PWM, L-PWM
     initMotorPWM(&motor_0, FREQ_HZ);
     initMotorPIO(&motor_0, pio0);//would be nice to get first available PIO
-    setMotorSpeed(&motor_0, 10);
+    setMotorSpeed(&motor_0, 20);
 }
 
 //loop forever
 void loop() {
-    uint dutyCycle = 10;
+    uint dutyCycle = 20;
     bool dir = CW;
     while(true) {
         clearFlag(&pulse_0);
         runMotor(&motor_0, dir);
         sleep_ms(1000);//let motor reach speed
-        startCount(&pulse_0, 100);
+        startCount(&pulse_0, dutyCycle * 10);
         while(checkFlag(&pulse_0) == false) {};
         calcSpeed(&pulse_0);
         printf("Duty Cycle: %d, Speed: %.2f\n", dutyCycle, pulse_0.currentHertz);
@@ -56,9 +56,9 @@ void loop() {
         // stopMotor(&motor_0);
         // calcSpeed(&pulse_1);
         // printf("Speed: %d, HZ: %f, RPM: %f\n", speed, pulse_1.currentHertz, pulse_1.currentRPM);
-        // speed = ((speed + 5) % 50); //keep us in the range of 10-45
-        // speed = !speed ? 10 : speed;
-        // setMotorSpeed(&motor_0, speed);
+        dutyCycle = ((dutyCycle + 1) % 40); //keep us in the range of 10-45
+        dutyCycle = !dutyCycle ? 20 : dutyCycle;
+        setMotorSpeed(&motor_0, dutyCycle);
     }
 
     // while(true) {
