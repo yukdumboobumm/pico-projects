@@ -5,7 +5,7 @@
 #include "testPulse.pio.h"
 #include "pico/rand.h"
 
-//global constants
+///global constants
 const uint PULSE_PIN = 18;
 const uint OUT_PIN = 19;
 const PIO PIONUM = pio0;
@@ -180,7 +180,7 @@ void loop() {
         uint32_t randPulseNum = get_rand_32();
         randPulseNum = (randPulseNum % 100) + 10;
         // startCount(&pulse_0, randPulseNum - 1);
-        startCount(&pulse_0, 123);
+        startCount(&pulse_0, 20);
         // test pulse of 20Hz
         while(checkFlag(&pulse_0) == false) {
             gpio_put(OUT_PIN, true);
@@ -189,7 +189,7 @@ void loop() {
             sleep_us(50000-25);
             counter++;
         }
-        printf("asked for %d, and sent: %d\n",randPulseNum, counter);
+        printf("asked for %d, and sent: %d\n",20u, counter);
         getCount(&pulse_0);
         calcSpeed(&pulse_0);
         sleep_ms(1000);
