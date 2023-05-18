@@ -10,6 +10,8 @@ const uint PULSE_PIN = 18;
 const uint OUT_PIN = 19;
 const PIO PIONUM = pio0;
 
+//global variables:
+absolute_time_t intTime;
 
 typedef struct {
     uint sensorPin;
@@ -54,13 +56,27 @@ void initPulseCounter(PULSE_COUNTER *pc, uint pin,  enum INT_NUM intNum) {
     pc->countStarted = false;
     pc->countReady = false;
     if (intnum_used[intNum]==false) {
-        if (intNum < INT3) {
-            pc->PIO_IRQ = (uint)(intNum + 8);
-            pc->interruptNum = intNum;
-        }
-        else {
-            printf("bad interrupt value. program terminated\n");
-            while(1){};
+        pc->interruptNum = intNum;
+        switch(intNum) {
+            case INT0:
+                pc->PIO_IRQ = pis_interrupt0;
+                pc->NVIC_IRQ = PIO0_IRQ_0;
+                break;
+            case INT1:
+                pc->PIO_IRQ = pis_interrupt1;
+                pc->NVIC_IRQ = PIO0_IRQ_1;
+                break;
+            case INT2:
+                pc->PIO_IRQ = pis_interrupt2;
+                pc->NVIC_IRQ = PIO1_IRQ_0;
+                break;
+            case INT3:
+                pc->PIO_IRQ = pis_interrupt3;
+                pc->NVIC_IRQ = PIO1_IRQ_1;
+                break;
+            default:
+                printf("bad interrupt value. program terminated\n");
+                while(1){};
         }
     }
     else { 
@@ -73,6 +89,7 @@ void initPulseCounter(PULSE_COUNTER *pc, uint pin,  enum INT_NUM intNum) {
 }
 
 void generalISRhandler() {
+    intTime = get_absolute_time();
     printf("!!in handler!!\n");
     if(pio_interrupt_get(PIONUM, INT0))  {
         intFlags[INT0] = true;
@@ -103,12 +120,10 @@ void initPulsePIO(PULSE_COUNTER *pc) {
     pulse_count_program_init(pc->PIO_NUM, pc->SM_NUM, pc->OFFSET, pc->sensorPin);//initialize the SM
     pio_sm_set_enabled(pc->PIO_NUM, pc->SM_NUM, true);//start the SM
     printf("Loaded PIO program at %d and started SM: %d\n", pc->OFFSET, pc->SM_NUM);
-	irq_set_exclusive_handler(PIO0_IRQ_0, generalISRhandler);
-	irq_set_enabled(PIO0_IRQ_0, true); //enable interrupt for NVIC
-    // pio_set_irq0_source_enabled(pc->PIO_NUM, pc->IRQ, true); //enable interrupt in PIO
-    pio_set_irq0_source_enabled(PIONUM, pis_interrupt0, true);
+    irq_set_exclusive_handler(pc->NVIC_IRQ, generalISRhandler);
+	irq_set_enabled(pc->NVIC_IRQ, true); //enable interrupt for NVIC
+    pio_set_irq0_source_enabled(PIONUM, pc->PIO_IRQ, true);
     printf("finished setting interrupt\n");
-    // printf("PIS number: %d, IRQ number: %d\n", pis_interrupt0, pc->IRQ);
 }
 
 void startCount(PULSE_COUNTER *pc, uint numPulses) {
@@ -120,7 +135,7 @@ void startCount(PULSE_COUNTER *pc, uint numPulses) {
 }
 
 void getCount(PULSE_COUNTER *pc) {
-    pc->countEndTime = get_absolute_time();
+    pc->countEndTime = intTime;
     pc->countStarted = false;
 }
 
@@ -129,9 +144,10 @@ void calcSpeed(PULSE_COUNTER *pc) {
     int32_t timeDiff_ms = timeDiff / 1000;
     int32_t timeDiff_s = timeDiff_ms / 1000;
     if (timeDiff) {
-        printf("time diff ms: %d\n", timeDiff_ms);
-        pc->currentHertz = ((float)pc->count) / (timeDiff_s);
+        printf("count: %d time diff us: %llu ms: %d secs: %d\n", pc->count, timeDiff, timeDiff_ms, timeDiff_s);
+        pc->currentHertz = ((double)pc->count * 1000 * 1000) / (timeDiff);
         pc->currentRPM = pc->currentHertz * 60;
+        printf("%.2f Hz, %d RPM\n", pc->currentHertz, (uint)pc->currentRPM);
     }
     else printf("no time difference. Skipping...\n");
 }
@@ -162,13 +178,15 @@ void loop() {
         //uint32_t message;
         clearFlag(&pulse_0);
         uint32_t randPulseNum = get_rand_32();
-        randPulseNum = (randPulseNum % 1000) + 100;
-        startCount(&pulse_0, randPulseNum);
+        randPulseNum = (randPulseNum % 100) + 10;
+        // startCount(&pulse_0, randPulseNum - 1);
+        startCount(&pulse_0, 123);
+        // test pulse of 20Hz
         while(checkFlag(&pulse_0) == false) {
             gpio_put(OUT_PIN, true);
             sleep_us(25);
             gpio_put(OUT_PIN, false);
-            sleep_us(500);
+            sleep_us(50000-25);
             counter++;
         }
         printf("asked for %d, and sent: %d\n",randPulseNum, counter);
