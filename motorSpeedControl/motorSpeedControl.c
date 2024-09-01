@@ -7,12 +7,13 @@ const bool CW = false;
 const bool CCW = true;
 const bool HIGH = true;
 const bool LOW = false;
-const uint FREQ_HZ = 24000;
+const uint FREQ_HZ = 32000;
 const float SET_SPEED_HZ = 24.0;
-const float MAX_DUTY_CYCLE = 32.0;
+const float MAX_DUTY_CYCLE = 50.0;
 // const uint DUTY_CYCLE = 30;
 
-const float kP = 0.3, kI = 0.0, kD = 10.5;
+// const float kP = 0.5, kI = 0.0, kD = 10.5;
+const float kP = 1.25, kI=0.04, kD=0.0;
 const float kV_CONSTANT = .8181;
 
 //global pin constants
@@ -28,7 +29,7 @@ const uint L_PWM_PIN = 18;
 //still using a constant for pionum...
 const PIO PIONUM = pio0;
 
-//global instances
+//global instancess
 PULSE_COUNTER pulse_0;
 DC_MOTOR motor_0;
 
@@ -36,6 +37,7 @@ DC_MOTOR motor_0;
 void init() {
     stdio_init_all();
     sleep_ms(3000);//give us some time to breathe
+    printf("starting");
     initPulseCounter(&pulse_0, PULSE_PIN, INT0);
     initPulsePIO(&pulse_0, PIONUM);
     initMotor(&motor_0, R_ENABLE_PIN, L_ENABLE_PIN, R_PWM_PIN, L_PWM_PIN);//DCMOTOR, R-Enable, L-Enable, R-PWM, L-PWM
@@ -73,7 +75,7 @@ void loop() {
         // setMotorSpeed(&motor_0, 35);
         runMotorForward(&motor_0, dutyCycle);
         sleep_ms(1000);//let motor reach speed
-        startCount(&pulse_0, SET_SPEED_HZ * 4); //sample @ roughly 10x the motor frequency
+        startCount(&pulse_0, SET_SPEED_HZ * 5); //sample @ roughly 10x the motor frequency
         while(checkFlag(&pulse_0) == false) {};
         calcSpeed(&pulse_0);
         measured_speed = pulse_0.currentHertz;

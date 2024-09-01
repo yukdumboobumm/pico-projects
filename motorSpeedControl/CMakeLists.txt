@@ -1,3 +1,14 @@
+# == DO NEVER EDIT THE NEXT LINES for Raspberry Pi Pico VS Code Extension to work ==
+if(WIN32)
+    set(USERHOME $ENV{USERPROFILE})
+else()
+    set(USERHOME $ENV{HOME})
+endif()
+set(sdkVersion 2.0.0)
+set(toolchainVersion 13_2_Rel1)
+set(picotoolVersion 2.0.0)
+include(${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+# ====================================================================================
 cmake_minimum_required(VERSION 3.13)
 
 # Add pico_sdk_import.cmake file
@@ -15,8 +26,8 @@ pico_sdk_init()
 add_executable(${PROJECT_NAME}  motorSpeedControl.c)
 
 # Specify where the dc_motor library is located
-add_subdirectory(${PICO_SDK_PATH}/../pico-libraries/dc_motor ${CMAKE_CURRENT_BINARY_DIR}/dc_motor)
-add_subdirectory(${PICO_SDK_PATH}/../pico-libraries/pulseCounter ${CMAKE_CURRENT_BINARY_DIR}/pulseCounter)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../../pico-libraries/dc_motor ${CMAKE_CURRENT_BINARY_DIR}/dc_motor)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../../pico-libraries/pulseCounter ${CMAKE_CURRENT_BINARY_DIR}/pulseCounter)
 
 # Link against the Raspberry Pi Pico SDK and the dc_motor library
 target_link_libraries(${PROJECT_NAME} dc_motor pulseCounter)
